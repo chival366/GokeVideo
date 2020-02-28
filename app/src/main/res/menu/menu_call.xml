@@ -1,0 +1,16 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.goke.media">
+    <item
+        android:id="@+id/action_settings0"
+        android:orderInCategory="100"
+        android:title="Audio"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_settings1"
+        android:orderInCategory="100"
+        android:title="Video"
+        app:showAsAction="never" />
+
+</menu>
