@@ -68,5 +68,5 @@ enum SipEvent {
     SIP_NOTIFICATION_SERVERFAILURE,     /**< announce a server failure       */
     SIP_NOTIFICATION_GLOBALFAILURE,     /**< announce a global failure       */
 
-    SIP_EVENT_COUNT                  /**< MAX number of events              */
+    SIP_EVENT_COUNT;                  /**< MAX number of events              */
 }

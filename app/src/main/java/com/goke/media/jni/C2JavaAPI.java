@@ -1,10 +1,11 @@
 package com.goke.media.jni;
 
+import com.goke.media.ui.call.IStateListener;
+
 
 //import android.content.Context;
 //import android.util.Log;
 
-import com.goke.media.ui.call.IStateListener;
 
 public class C2JavaAPI implements IStateListener {
 

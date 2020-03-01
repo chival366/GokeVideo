@@ -27,20 +27,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.goke.media.R;
 import com.goke.media.jni.C2JavaAPI;
 import com.goke.media.jni.Java2CAPI;
+import com.goke.media.ui.call.SipEvent;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.webrtc.videoengine.ViERenderer;
-import org.webrtc.videoengine.VideoCaptureAndroid;
 
 import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
-import android.view.ViewGroup;
 
 public class VideoCallActivity extends AppCompatActivity implements IStateListener {
     private static Java2CAPI j2c = null;
     PeerInfo voicelocal = null, voiceremote = null;
     //String callInfoList = "";
+    private TextView textViewVersion = null;
     private EditText editTextCallee = null;
     private Button buttonAnswer = null;
     private Button buttonInvite = null;
@@ -51,7 +50,6 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
 
     private String username, password;
     private String caller, callee;
-    private int callid = -1;
 
     private LinearLayout llRemoteSurface;
     private LinearLayout llLocalSurface;
@@ -60,12 +58,15 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
 
     PeerInfo videolocal = null, videoremote = null;
     private MediaEngine mediaEngine = null;
+    private boolean addViewFlag = false;
+    private static String TAG="cosdk";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_videocall );
 
+        textViewVersion = (TextView) findViewById( R.id.textViewVersion );
         textViewMediaStats = (TextView) findViewById( R.id.textViewMediaStats );
         editTextCallee = (EditText) findViewById( R.id.editTextCallee );
         buttonAnswer = (Button) findViewById( R.id.buttonL );
@@ -74,51 +75,40 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
         llRemoteSurface = (LinearLayout) findViewById(R.id.llRemoteView);
         llLocalSurface = (LinearLayout) findViewById(R.id.llLocalView);
 
-        svRemote = ViERenderer.CreateRenderer(this, true);
-        svLocal  = ViERenderer.CreateRenderer(this, true);
-        //svLocal = new SurfaceView(this);
-        //VideoCaptureAndroid.setLocalPreview(svLocal.getHolder());
-        svLocal.setZOrderOnTop( true );
-
         Intent intent = getIntent();
         username = intent.getStringExtra( "username" );
         password = intent.getStringExtra( "password" );
-
-        C2JavaAPI.setCallStateListener( this );
-        j2c = new Java2CAPI();
-        //j2c.cosdkInit();
-
-        mediaEngine = new MediaEngine(this, j2c);
-
-
-        textViewMediaStats.setVisibility( INVISIBLE );
-        String localIP = PeerInfo.getLocalIP( this );
-        editTextCallee.setText(localIP);
 
         voicelocal = new PeerInfo( "127.0.0.1", 20000 );
         voiceremote = new PeerInfo( "127.0.0.1", 20000 );
         videolocal = new PeerInfo( "127.0.0.1", 21000 );
         videoremote = new PeerInfo( "127.0.0.1", 21000 );
+        String localIP = PeerInfo.getLocalIP( this );
+
+        C2JavaAPI.setCallStateListener( this );
+        j2c = new Java2CAPI();
+        j2c.cosdkInit();  // for sip
+
+        mediaEngine = new MediaEngine(this, j2c);
+        //mediaEngine.startCamera(this, llLocalSurface, llRemoteSurface);
+        textViewVersion.setText(j2c.cosdkVersion() + "\n\nLocalIP: " + localIP);
+        editTextCallee.setText(localIP);
 
         buttonInvite.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 buttonInvite.setEnabled( false );
                 buttonHangup.setEnabled( true );
-                callee = editTextCallee.getText().toString(); // 获取输入框内容
-                //Sound.Play( VideoCallActivity.this, CallDir.OUTGOING );
 
-                //j2c.mediaStartRecv( voicelocal.getPort() );
+                callee = editTextCallee.getText().toString();
+                Sound.Play( VideoCallActivity.this, CallDir.OUTGOING );
+
+                j2c.mediaStartRecv( voicelocal.getPort() );
                 //j2c.mediaStartSend( voiceremote.getPort(), voiceremote.getAddr(), "PCMA" );
-                //callid = j2c.cosdkInvite( callee );
 
-                //mediaEngine.startCamera();
-                if(mediaEngine != null) {
-                    llLocalSurface.addView( mediaEngine.getLocalSurfaceView() );
-                    llRemoteSurface.addView( mediaEngine.getRemoteSurfaceView() );
-                }
-                mediaEngine.videoStartRecv(videolocal.getPort());
-                mediaEngine.videoStartSend(videoremote.getPort(), videoremote.getAddr(), "VP8");
+                mediaEngine.videoStartRecv(videolocal.getPort(), llLocalSurface, llRemoteSurface);
+                j2c.cosdkInvite( callee );
+                //mediaEngine.videoStartSend(videoremote.getPort(), videoremote.getAddr(), "VP8");
             }
         } );
 
@@ -128,12 +118,11 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
                 buttonAnswer.setEnabled( false );
                 //buttonHangup.setEnabled( true );
                 Sound.StopPlay();
-
                 j2c.cosdkAnswer( -1 );
                 j2c.mediaStartRecv( voicelocal.getPort() );
-                //j2c.videoStartRecv( videolocal.getPort(), svRecv );
                 j2c.mediaStartSend( voiceremote.getPort(), voiceremote.getAddr(), "PCMA" );
-                //j2c.videoStartSend( videoremote.getPort(), videoremote.getAddr(), "VP8", svSend );
+                mediaEngine.videoStartRecv( videolocal.getPort(),llLocalSurface, llRemoteSurface );
+                mediaEngine.videoStartSend( videoremote.getPort(), videoremote.getAddr(), "VP8");
                 textViewMediaStats.setVisibility( VISIBLE );
             }
         } );
@@ -143,23 +132,13 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
             public void onClick(View v) {
                 buttonHangup.setEnabled( false );
                 buttonInvite.setEnabled( true );  // only for test
-                //Sound.StopPlay();
+                Sound.StopPlay();
 
-                //j2c.cosdkHangup( -1 );
-                //mediaStopAll();
-                mediaEngine.videoStop();
-                llLocalSurface.removeView(mediaEngine.getLocalSurfaceView());
-                llRemoteSurface.removeView(mediaEngine.getRemoteSurfaceView());
+                j2c.cosdkHangup( -1 );
+                mediaStopAll();
+                videoStopAll();
             }
         } );
-    }
-
-    public void onClick(View v){
-        Log.i("cosdk", "invite clicked 0" );
-        if(v.getId() == R.id.buttonC){
-            Log.i("cosdk", "invite clicked 1");
-            v.setEnabled( false );
-        }
     }
 
     public void onBackPressed() {
@@ -169,11 +148,12 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
     @Override
     protected void onDestroy() {
         //j2c.cosdkUnreg();
-        //videoStopAll();
-        //mediaStopAll();
-        //j2c.cosdkExit();
+        Sound.StopPlay();
+        videoStopAll();
+        mediaStopAll();
 
         mediaEngine.dispose();
+        j2c.cosdkExit();
         j2c = null;
         super.onDestroy();
     }
@@ -183,8 +163,7 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
     }
 
     public void videoStopAll(){
-        textViewMediaStats.setVisibility( INVISIBLE );
-        j2c.videoStop();
+        mediaEngine.videoStop(llLocalSurface, llRemoteSurface);
     }
 
     public int SdkCallback(final int s, final int c, final String info, final String jsonData) {
@@ -199,17 +178,20 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
             if (s == 1) {
                 if (code == SipEvent.SIP_CALL_INVITE || code == SipEvent.SIP_CALL_ANSWERED) {  // SIP_CALL_INVITE
                     JSONObject jsonObject = new JSONObject( jsonData );
-                    callid = jsonObject.getInt( "callid" );
 
                     JSONObject jsonObjectVoice = (JSONObject) jsonObject.get( "voice" );
-                    voiceremote.setPort( jsonObjectVoice.getInt( "port" ) );
-                    voiceremote.setAddr( jsonObjectVoice.getString( "addr" ) );
-                    Log.d( "cosdk", "remotesdp voice addr:port " + voiceremote.getAddr() + ":" + voiceremote.getPort() );
+                    if(jsonObjectVoice != null) {
+                        voiceremote.setPort( jsonObjectVoice.getInt( "port" ) );
+                        voiceremote.setAddr( jsonObjectVoice.getString( "addr" ) );
+                        Log.d( "cosdk", "remotesdp voice addr:port " + voiceremote.getAddr() + ":" + voiceremote.getPort() );
+                    }
 
-                    /*JSONObject jsonObjectVideo = (JSONObject) jsonObject.get( "video" );
-                    videoremote.setPort( jsonObjectVoice.getInt( "port" ) );
-                    videoremote.setAddr( jsonObjectVoice.getString( "addr" ) );
-                    Log.d( "cosdk", "remotesdp video addr:port " + videoremote.getAddr() + ":" + videoremote.getPort() );*/
+                    JSONObject jsonObjectVideo = (JSONObject) jsonObject.get( "video" );
+                    if(jsonObjectVideo != null) {
+                        videoremote.setPort( jsonObjectVideo.getInt( "port" ) );
+                        videoremote.setAddr( jsonObjectVideo.getString( "addr" ) );
+                        Log.d( "cosdk", "remotesdp video addr:port " + videoremote.getAddr() + ":" + videoremote.getPort() );
+                    }
                 }
             }
         } catch (JSONException e) {
@@ -249,8 +231,9 @@ public class VideoCallActivity extends AppCompatActivity implements IStateListen
                         case SIP_CALL_ANSWERED:
                             Sound.StopPlay();
                             j2c.mediaStartSend( voiceremote.getPort(), voiceremote.getAddr(), "PCMA" );
-                            //j2c.videoStartSend( videoremote.getPort(), videoremote.getAddr(), "VP8" , svSend);
+                            mediaEngine.videoStartSend( videoremote.getPort(), videoremote.getAddr(), "VP8" );
                             textViewMediaStats.setVisibility( VISIBLE );
+
                             Log.d( "cosdk", "recv 200ok" );
                             break;
 

@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.goke.media.R;
 import com.goke.media.jni.C2JavaAPI;
 import com.goke.media.jni.Java2CAPI;
+import com.goke.media.ui.call.SipEvent;
 
 import org.json.JSONException;
 import org.json.JSONObject;

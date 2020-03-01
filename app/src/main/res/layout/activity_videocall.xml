@@ -7,6 +7,17 @@
     android:layout_height="match_parent"
     tools:context="com.goke.media.ui.call.VideoCallActivity">
 
+    <TextView
+        android:id="@+id/textViewVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text=""
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/llRemoteView"
         android:layout_width="352dp"
@@ -29,6 +40,7 @@
         android:layout_height="40dp"
         android:layout_marginBottom="20dp"
         android:text="XXX"
+        android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@+id/editTextCallee"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"

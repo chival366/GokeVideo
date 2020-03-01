@@ -7,7 +7,7 @@ android {
         applicationId "com.goke.media"
         minSdkVersion 19
         //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 29
+        targetSdkVersion 21
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -46,7 +46,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'androidx.annotation:annotation:1.0.2'
@@ -55,15 +55,19 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
-
+    //provided fileTree(include: ['*.jar'], dir: 'libs')
+    //provided 'com.android.support:appcompat-v7:25.1.1'
     /*configurations.all {
-        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-            def requested = details.requested
-            if (requested.group == 'com.android.support') {
-                if (!requested.name.startsWith("multidex")) {
-                    details.useVersion '27.+'
-                }
-            }
-        }
-    }*/
+                    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                        def requested = details.requested
+                        if (requested.group == 'com.android.support') {
+                            if (!requested.name.startsWith("multidex")) {
+                                details.useVersion '27.+'
+                            }
+                        }
+                    }
+                }*/
+    implementation files('libs/audio_device_module_java.jar')
+    implementation files('libs/video_capture_module_java.jar')
+    implementation files('libs/video_render_module_java.jar')
 }
